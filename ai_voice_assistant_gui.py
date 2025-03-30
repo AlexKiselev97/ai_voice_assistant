@@ -1,6 +1,3 @@
-import sys
-import psutil
-import gpustat
 from PyQt6.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -16,14 +13,16 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import pyqtSlot, QTimer, Qt
 from PyQt6.QtGui import QMovie, QPainter, QPixmap
+
+import sys
+import psutil
+import gpustat
 import threading
 import subprocess
 from playsound import playsound
-import time
 
 import llm_utils as llmu
-import TTS_modules.silero.silero_tts as ttsu
-from ASR_modules import asr
+from ASR_modules import asr_helper
 from TTS_modules import tts_helper
 
 statusToColor = {
@@ -89,7 +88,7 @@ class MainWindow(QMainWindow):
         asr_layout = QHBoxLayout()
         asr_layout.addWidget(QLabel("ASR module:"))
         self.asr_combo = QComboBox()
-        self.asr_combo.addItems(asr.get_available_asr())
+        self.asr_combo.addItems(asr_helper.get_available_asr())
         self.current_asr = self.asr_combo.currentText()
         self.asr_combo.currentTextChanged.connect(self.on_asr_change)
         asr_layout.addWidget(self.asr_combo)
@@ -97,7 +96,9 @@ class MainWindow(QMainWindow):
         tts_layout = QHBoxLayout()
         tts_layout.addWidget(QLabel("TTS module:"))
         self.tts_combo = QComboBox()
-        self.tts_combo.addItems(tts_helper.get_available_asr())
+        self.tts_combo.addItems(tts_helper.get_available_tts())
+        self.current_tts = self.tts_combo.currentText()
+        self.tts_combo.currentTextChanged.connect(self.on_tts_change)
         tts_layout.addWidget(self.tts_combo)
 
         # Keyword input
@@ -211,7 +212,6 @@ class MainWindow(QMainWindow):
 
     @pyqtSlot(str)
     def on_language_change(self, text):
-        """Handle language selection change"""
         self.set_status_text(f"Language changed to: {text}")
         self.lang = 'en' if text == 'English' else 'ru'
         self.keyword_input.setText('hello' if self.lang == 'en' else 'привет')
@@ -219,9 +219,8 @@ class MainWindow(QMainWindow):
         
     @pyqtSlot(str)
     def on_keyword_change(self, text):
-        """Handle keyword input change"""
-        self.set_status_text(f"Keyword updated: {text}")
         self.keyword = text
+        self.set_status_text(f"Keyword updated: {text}")
         
     def set_status_text(self, text):
         if self.status == text:
@@ -232,6 +231,10 @@ class MainWindow(QMainWindow):
     @pyqtSlot(str)
     def on_asr_change(self, text):
         self.current_asr = text
+
+    @pyqtSlot(str)
+    def on_tts_change(self, text):
+        self.current_tts = text
 
     @pyqtSlot(bool)
     def startAssistant(self, clicked):
@@ -266,27 +269,26 @@ class MainWindow(QMainWindow):
         
     def run_assitant(self):
         self.set_status_text("Loading TTS engine...")
-        engine = ttsu.get_voice_engine(self.lang)
+        engine = tts_helper.get_voice_engine(self.current_tts, self.lang)
         self.set_status_text("Loading ASR engine...")
-        asr_engine = asr.get_asr_engine(self.current_asr, self.lang)
+        asr_engine = asr_helper.get_asr_engine(self.current_asr, self.lang)
         while not self.stop_event.is_set():
-            self.set_status_text("Listening for the keyword...")
-            print('running in assistant loop')
-            if asr.detect_keyword(self.current_asr, self.keyword, asr_engine, lambda: self.stop_event.is_set()):
+            self.set_status_text(f"Listening for \"{self.keyword}\" keyword...")
+            if asr_helper.detect_keyword(self.current_asr, self.keyword, asr_engine, lambda: self.stop_event.is_set()):
                 if self.stop_event.is_set():
                     break
                 playsound('res/mixkit-select-click-1109.wav')
-                self.set_status_text("Please say your command...")
-                command = asr.capture_command(self.current_asr, asr_engine, self.stop_event)
+                self.set_status_text("Listening for your command...")
+                command = asr_helper.capture_command(self.current_asr, asr_engine, lambda: self.stop_event.is_set())
                 while not self.stop_event.is_set() and command:
                     self.set_status_text("Thinking...")
                     response = llmu.get_response(command, self.selected_model, self.lang)
                     thoughts, response = llmu.parse_response(response.message.content)
                     llmu.print_model_response(thoughts, response)
                     self.set_status_text("Responding...")
-                    ttsu.text_to_speech(engine, '\n'.join(response), self.lang, lambda: self.stop_event.is_set())
+                    tts_helper.text_to_speech(self.current_tts, engine, '\n'.join(response), self.lang, lambda: self.stop_event.is_set())
                     self.set_status_text("Please say your command...")
-                    command = asr.capture_command(self.current_asr, asr_engine, lambda: self.stop_event.is_set())
+                    command = asr_helper.capture_command(self.current_asr, asr_engine, lambda: self.stop_event.is_set())
                 self.set_status_text("Listening for the keyword...")
             else:
                 playsound('res/mixkit-click-error-1110.wav')

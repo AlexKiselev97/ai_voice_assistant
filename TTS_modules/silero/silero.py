@@ -4,7 +4,7 @@ import sounddevice as sd
 import string
 
 def load_silero_model(model_path):
-    # Check if model exists locally
+    print(f'Loading {model_path}...')
     if not os.path.exists(model_path):
         raise FileNotFoundError(f"Model file {model_path} not found. Please download it manually.")
     device = torch.device('cpu')
@@ -12,9 +12,10 @@ def load_silero_model(model_path):
     # Load the model directly without downloading
     model = torch.package.PackageImporter(model_path).load_pickle("tts_models", "model")
     model.to(device)
+    print('Silero model is loaded!')
     return model, device
 
-def text_to_speech(engine, text, lang, is_running):
+def text_to_speech(engine, text, lang, stop_event):
     speaker = 'en_0' if lang == 'en' else 'xenia'
 
     russian_alphabet_lowercase = ""
@@ -27,7 +28,7 @@ def text_to_speech(engine, text, lang, is_running):
 
     sentences = [s.strip() for s in text.split('.') if s.strip()]
     for s in sentences:
-        if not is_running():
+        if stop_event():
             return
         if all(c not in s for c in alphabet):
             continue
@@ -43,3 +44,9 @@ def text_to_speech(engine, text, lang, is_running):
 def get_voice_engine(lang):
     model, device = load_silero_model('v3_en.pt' if lang == 'en' else 'v4_ru.pt')
     return model
+
+if __name__ == "__main__":
+    eng = get_voice_engine('en')
+    text_to_speech(eng, 'hello, my name is Bill', 'en', lambda: False)
+    eng = get_voice_engine('ru')
+    text_to_speech(eng, 'привет, меня зовут Антоша', 'ru', lambda: False)

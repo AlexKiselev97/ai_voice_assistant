@@ -2,7 +2,7 @@ import time
 import pyttsx3
 import os
 
-def text_to_speech(engine, text):
+def text_to_speech(engine, text, lang, is_running):
     engine.say(text)
     engine.runAndWait()
 
