@@ -269,29 +269,32 @@ class MainWindow(QMainWindow):
         
     def run_assitant(self):
         self.set_status_text("Loading TTS engine...")
-        engine = tts_helper.get_voice_engine(self.current_tts, self.lang)
+        tts_engine = tts_helper.get_voice_engine(self.current_tts, self.lang)
+
         self.set_status_text("Loading ASR engine...")
         asr_engine = asr_helper.get_asr_engine(self.current_asr, self.lang)
+        
         while not self.stop_event.is_set():
             self.set_status_text(f"Listening for \"{self.keyword}\" keyword...")
-            if asr_helper.detect_keyword(self.current_asr, self.keyword, asr_engine, lambda: self.stop_event.is_set()):
-                if self.stop_event.is_set():
-                    break
+            detected = asr_helper.detect_keyword(self.current_asr, self.keyword, asr_engine, lambda: self.stop_event.is_set())
+            if self.stop_event.is_set():
+                break
+            if detected:
                 playsound('res/mixkit-select-click-1109.wav')
                 self.set_status_text("Listening for your command...")
                 command = asr_helper.capture_command(self.current_asr, asr_engine, lambda: self.stop_event.is_set())
-                while not self.stop_event.is_set() and command:
+                if not self.stop_event.is_set() and command:
                     self.set_status_text("Thinking...")
                     response = llmu.get_response(command, self.selected_model, self.lang)
                     thoughts, response = llmu.parse_response(response.message.content)
                     llmu.print_model_response(thoughts, response)
+                    if self.stop_event.is_set():
+                        break
                     self.set_status_text("Responding...")
-                    tts_helper.text_to_speech(self.current_tts, engine, '\n'.join(response), self.lang, lambda: self.stop_event.is_set())
-                    self.set_status_text("Please say your command...")
-                    command = asr_helper.capture_command(self.current_asr, asr_engine, lambda: self.stop_event.is_set())
-                self.set_status_text("Listening for the keyword...")
-            else:
-                playsound('res/mixkit-click-error-1110.wav')
+                    tts_helper.text_to_speech(self.current_tts, tts_engine, '\n'.join(response), self.lang, lambda: self.stop_event.is_set())
+                else:
+                    playsound('res/mixkit-click-error-1110.wav')
+        self.set_status_text("Deactivated")
         print('Finished assistant thread!')
     
     def format_size(self, bytes, units):
