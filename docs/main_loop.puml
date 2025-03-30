@@ -1,0 +1,39 @@
+@startuml main loop
+actor User
+participant "System" as system
+participant "TTS provider" as tts
+participant "ASR provider" as asr
+participant "LLM" as llmu
+participant "Audio" as audio
+
+User -> system : start assistant thread
+system -> tts : get_tts_engine(current_tts, lang)
+tts --> system : tts_engine
+system -> asr : get_asr_engine(current_asr, lang)
+asr --> system : asr_engine
+
+loop while assistant enabled
+    system -> asr : detect_keyword(current_asr, keyword, asr_engine, stop_event)
+    alt keyword detected
+        asr --> system : detected=true
+        system -> audio : playsound("mixkit-select-click-1109.wav")
+        system -> asr : capture_command(current_asr, asr_engine, stop_event)
+        alt command captured
+            asr --> system : command
+            system -> llmu : get_response(command, selected_model, lang)
+            llmu --> system : response
+            system -> llmu : parse_response(response)
+            llmu --> system : thoughts, response_text
+            system -> tts : text_to_speech(current_tts, tts_engine, response_text, lang, stop_event)
+        else
+            system -> audio : playsound("mixkit-click-error-1110.wav")
+        end
+    else
+        asr --> system : detected=false
+        break if stop_event.is_set()
+    end
+end
+
+system -> system : set_status_text("Deactivated")
+system -> system : print("Finished assistant thread!")
+@enduml
