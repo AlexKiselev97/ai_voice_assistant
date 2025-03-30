@@ -1,0 +1,11 @@
+gcc
+python3-dev
+portaudio19-dev
+ollama
+cuda
+espeak
+espeak-ng
+libespeak-ng-dev
+libonnxruntime-dev
+libcairo2-dev libxt-dev libgirepository1.0-dev
+sudo apt-get install libespeak-ng1
