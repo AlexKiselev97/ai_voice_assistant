@@ -7,5 +7,5 @@ espeak
 espeak-ng
 libespeak-ng-dev
 libonnxruntime-dev
-libcairo2-dev libxt-dev libgirepository1.0-dev
-sudo apt-get install libespeak-ng1
+libcairo2-dev libxt-dev libgirepository1.0-dev libgirepository-2.0-dev
+libespeak-ng1
