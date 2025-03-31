@@ -6,6 +6,8 @@ participant "asr_helper" as asr
 participant "llm_helper" as llm
 participant "sound device" as sound
 
+User -> assistant : start assistant thread
+
 assistant -> tts : get_voice_engine(current_tts, lang)
 activate tts
 tts --> assistant : tts_engine
