@@ -1,39 +1,69 @@
-@startuml main loop
+@startuml
 actor User
-participant "System" as system
-participant "TTS provider" as tts
-participant "ASR provider" as asr
-participant "LLM" as llmu
-participant "Audio" as audio
+participant "Assistant" as assistant
+participant "tts_helper" as tts
+participant "asr_helper" as asr
+participant "llm_helper" as llm
+participant "sound device" as sound
 
-User -> system : start assistant thread
-system -> tts : get_tts_engine(current_tts, lang)
-tts --> system : tts_engine
-system -> asr : get_asr_engine(current_asr, lang)
-asr --> system : asr_engine
+assistant -> tts : get_voice_engine(current_tts, lang)
+activate tts
+tts --> assistant : tts_engine
+deactivate tts
 
-loop while assistant enabled
-    system -> asr : detect_keyword(current_asr, keyword, asr_engine, stop_event)
-    alt keyword detected
-        asr --> system : detected=true
-        system -> audio : playsound("mixkit-select-click-1109.wav")
-        system -> asr : capture_command(current_asr, asr_engine, stop_event)
-        alt command captured
-            asr --> system : command
-            system -> llmu : get_response(command, selected_model, lang)
-            llmu --> system : response
-            system -> llmu : parse_response(response)
-            llmu --> system : thoughts, response_text
-            system -> tts : text_to_speech(current_tts, tts_engine, response_text, lang, stop_event)
+assistant -> asr : get_asr_engine(current_asr, lang)
+activate asr
+asr --> assistant : asr_engine
+deactivate asr
+
+loop while !stop_event.is_set()
+    assistant -> asr : detect_keyword(keyword, asr_engine, stop_event)
+    activate asr
+    asr --> assistant : detected
+    deactivate asr
+    
+    alt detected == True
+        assistant -> sound : play detection.wav
+        activate sound
+        sound --> assistant
+        deactivate sound
+        
+        assistant -> asr : capture_command(asr_engine, stop_event)
+        activate asr
+        asr --> assistant : command
+        deactivate asr
+        
+        alt command exists and !stop_event.is_set()
+            assistant -> llm : get_response(command, model, lang)
+            activate llm
+            llm --> assistant : response
+            deactivate llm
+            
+            assistant -> llm : parse_response(response)
+            activate llm
+            llm --> assistant : thoughts, response
+            deactivate llm
+            
+            assistant -> llm : print_model_response()
+            activate llm
+            llm --> assistant
+            deactivate llm
+            
+            assistant -> tts : text_to_speech(response, lang, stop_event)
+            activate tts
+            tts --> assistant
+            deactivate tts
         else
-            system -> audio : playsound("mixkit-click-error-1110.wav")
+            assistant -> sound : play error.wav
+            activate sound
+            sound --> assistant
+            deactivate sound
         end
     else
-        asr --> system : detected=false
-        break if stop_event.is_set()
+        note right: Keyword not detected
     end
 end
 
-system -> system : set_status_text("Deactivated")
-system -> system : print("Finished assistant thread!")
+assistant -> assistant : set_status("Deactivated")
+note over assistant: Thread terminated
 @enduml
