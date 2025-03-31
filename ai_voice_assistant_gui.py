@@ -280,7 +280,7 @@ class MainWindow(QMainWindow):
             if self.stop_event.is_set():
                 break
             if detected:
-                playsound('res/mixkit-select-click-1109.wav')
+                playsound('res/detection.wav')
                 self.set_status_text("Listening for your command...")
                 command = asr_helper.capture_command(self.current_asr, asr_engine, lambda: self.stop_event.is_set())
                 if not self.stop_event.is_set() and command:
@@ -293,7 +293,7 @@ class MainWindow(QMainWindow):
                     self.set_status_text("Responding...")
                     tts_helper.text_to_speech(self.current_tts, tts_engine, '\n'.join(response), self.lang, lambda: self.stop_event.is_set())
                 else:
-                    playsound('res/mixkit-click-error-1110.wav')
+                    playsound('res/error.wav')
         self.set_status_text("Deactivated")
         print('Finished assistant thread!')
     
