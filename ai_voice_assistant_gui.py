@@ -21,7 +21,7 @@ import threading
 import subprocess
 from playsound import playsound
 
-import llm_utils as llmu
+from LLM_modules import llm_helper
 from ASR_modules import asr_helper
 from TTS_modules import tts_helper
 
@@ -79,7 +79,7 @@ class MainWindow(QMainWindow):
         model_layout = QHBoxLayout()
         model_label = QLabel("LLM model:")
         self.model_combo = QComboBox()
-        self.model_combo.addItems(llmu.get_model_list())  # Add your models here
+        self.model_combo.addItems(llm_helper.get_model_list('ollama_llm'))
         self.selected_model = self.model_combo.currentText()
         self.model_combo.currentTextChanged.connect(self.on_model_change)
         model_layout.addWidget(model_label)
@@ -285,9 +285,9 @@ class MainWindow(QMainWindow):
                 command = asr_helper.capture_command(self.current_asr, asr_engine, lambda: self.stop_event.is_set())
                 if not self.stop_event.is_set() and command:
                     self.set_status_text("Thinking...")
-                    response = llmu.get_response(command, self.selected_model, self.lang)
-                    thoughts, response = llmu.parse_response(response.message.content)
-                    llmu.print_model_response(thoughts, response)
+                    response = llm_helper.get_response('ollama_llm', command, self.selected_model, self.lang)
+                    thoughts, response = llm_helper.parse_response('ollama_llm', response.message.content)
+                    llm_helper.print_model_response('ollama_llm', thoughts, response)
                     if self.stop_event.is_set():
                         break
                     self.set_status_text("Responding...")
