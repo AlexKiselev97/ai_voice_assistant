@@ -1,0 +1,68 @@
+@startuml
+skinparam state {
+  StartColor #228B22
+  EndColor #8B0000
+  BackgroundColor #FFFFFF
+  FontColor #000000
+}
+
+[*] --> Deactivated : Initial state
+
+state Deactivated {
+  Deactivated : Status: salmon
+}
+
+Deactivated --> LoadingTTS : User clicks Activate
+
+state "Loading TTS Engine" as LoadingTTS {
+  LoadingTTS : Status: lightyellow
+}
+
+LoadingTTS --> LoadingASR : TTS loaded
+
+state "Loading ASR Engine" as LoadingASR {
+  LoadingASR : Status: lightyellow
+}
+
+LoadingASR --> Listening : ASR loaded
+
+state Listening {
+  Listening : Status: mediumturquoise
+}
+
+Listening --> CapturingCommand : Keyword detected
+Listening --> [*] : User deactivates
+
+state CapturingCommand {
+  CapturingCommand : Status: mintcream
+}
+
+CapturingCommand --> Thinking : Command captured
+CapturingCommand --> Listening : Capture failed
+
+state Thinking {
+  Thinking : Status: lightskyblue
+}
+
+Thinking --> Responding : Response ready
+
+state Responding {
+  Responding : Status: aquamarine
+}
+
+Responding --> Listening : Response played
+
+[*] --> Deactivated : Final state
+
+note right of Listening
+  Continuous loop:
+  - Listens for keyword
+  - Monitors stop_event
+end note
+
+note left of CapturingCommand
+  Error handling:
+  - Plays error sound
+  - Returns to listening
+end note
+@enduml

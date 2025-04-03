@@ -1,0 +1,51 @@
+@startuml
+skinparam componentStyle rectangle
+
+node "User's Computer" {
+  component "MainWindow (PyQt6)" as gui {
+    [Language Selector]
+    [Model Selector]
+    [Status Display]
+    [Resource Monitor]
+  }
+  
+  component "ASR Module" as asr
+  component "TTS Module" as tts
+  component "LLM Interface" as llm
+  component "Python Runtime" as python
+  component "System Monitoring" as sysmon {
+    [psutil]
+    [gpustat]
+  }
+}
+
+node "Ollama Runtime" as ollama {
+  component "LLM Engine"
+}
+
+cloud "Audio Devices" {
+  component "Microphone"
+  component "Speakers"
+}
+
+gui --> asr : uses
+gui --> tts : uses
+gui --> llm : controls
+gui --> sysmon : monitors
+
+llm --> ollama : communicates with
+ollama --> "GPU" : utilizes
+
+asr --> "Microphone" : captures from
+tts --> "Speakers" : outputs to
+
+sysmon --> "CPU" : monitors
+sysmon --> "RAM" : monitors
+sysmon --> "GPU" : monitors
+
+python --> gui : hosts
+python --> asr : executes
+python --> tts : executes
+python --> llm : executes
+
+@enduml

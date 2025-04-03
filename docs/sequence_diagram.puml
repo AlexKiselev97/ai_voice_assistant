@@ -1,0 +1,38 @@
+@startuml
+actor User
+participant "MainWindow" as main
+participant "ASR_Helper" as asr
+participant "TTS_Helper" as tts
+participant "LLM_Helper" as llm
+participant "Thread" as thread
+
+User -> main: Clicks Activate button
+main -> thread: start assistant()
+activate thread
+
+thread -> asr: get_asr_engine()
+asr --> thread: asr_engine
+
+thread -> tts: get_voice_engine()
+tts --> thread: tts_engine
+
+loop while activated
+thread -> asr: detect_keyword()
+asr --> thread: detected
+
+thread -> asr: capture_command()
+asr --> thread: command
+
+thread -> llm: get_response(command)
+llm --> thread: response
+
+thread -> tts: text_to_speech(response)
+tts --> thread: success
+end
+
+User -> main: Clicks Deactivate button
+main -> thread: send stop event
+thread --> main: thread exits
+main -> main: cleanup()
+deactivate thread
+@enduml
