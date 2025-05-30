@@ -1,0 +1,35 @@
+@startuml
+skinparam componentStyle rectangle
+
+package "Voice AI Assistant" {
+  [MainWindow] as main
+  component "ASR Module" as asr {
+    [ASR modules]
+    [ASR helper]
+  }
+  component "TTS Module" as tts {
+    [TTS modules]
+    [TTS helper]
+  }
+  component "LLM Module" as llm {
+    [LLM helper]
+    [Ollama module]
+  }
+  [System Monitor] as sysmon
+  [Vosk,\nSpeech recognition\netc.] as ASRs
+  [Coqui,\nSilero\netc.] as TTSs
+}
+
+main -up-> asr : uses
+main -right-> tts : uses
+main -down-> llm : uses
+main --> sysmon : updates
+
+(ASR modules) --> ASRs : implements
+(TTS modules) --> TTSs : implements
+(Ollama module) --> [Ollama] : communicates via\nsubprocess
+
+sysmon --> [psutil] : collects\nCPU/RAM
+sysmon --> [gpustat] : collects\nGPU/VRAM
+
+@enduml

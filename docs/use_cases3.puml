@@ -1,0 +1,21 @@
+@startuml
+left to right direction
+
+actor User
+actor Admin
+
+User --> (Activate/Deactivate Assistant)
+User --> (Speak Command After Wake Word)
+User --> (Change parameters)
+User --> (Monitor System Metrics)
+
+Admin --> (Update modules)
+User <|- Admin
+
+(Change parameters) <.. (Change LLM)  : <<extend>>
+(Change parameters) <.. (Change language)  : <<extend>>
+(Change parameters) <.. (Change ASR module)  : <<extend>>
+(Change parameters) <.. (Change TTS module)  : <<extend>>
+(Change parameters) <.. (Change wake word)  : <<extend>>
+
+@enduml

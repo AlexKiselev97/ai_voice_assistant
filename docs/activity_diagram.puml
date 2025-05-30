@@ -1,0 +1,30 @@
+@startuml
+start
+:User activates assistant;
+fork
+    :Load TTS engine;
+    :Load ASR engine;
+    while (Not stopped?) is (Yes)
+        :Listen for keyword;
+        if (Keyword detected?) then (Yes)
+            :Play detection sound;
+            :Capture voice command;
+            if (Command captured?) then (Yes)
+                :Process with LLM;
+                :Generate TTS response;
+                :Play response audio;
+            else (No)
+                :Play error sound;
+            endif
+        else (No)
+            :Continue listening;
+        endif
+    endwhile (Stopped?)
+    :Unload engines;
+fork again
+    :Monitor system resources;
+    :Update CPU/RAM/GPU metrics;
+end fork
+:Deactivate assistant;
+stop
+@enduml
