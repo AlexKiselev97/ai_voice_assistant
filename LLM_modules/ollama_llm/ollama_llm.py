@@ -63,3 +63,28 @@ def print_model_response(thoughts, response):
     print('Model response:')
     for line in response:
         print(line)
+
+def start_model(name):
+    try:
+        result = subprocess.run(
+            ["ollama", "run", name],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        print("Ollama is running")
+        return True
+        
+    except subprocess.CalledProcessError as e:
+        print(f"Error executing command: {e.stderr}")
+        return False
+    except FileNotFoundError:
+        print("Error: Ollama is not installed or not in PATH")
+        return False
+
+def stop_model(name):
+    try:
+        subprocess.run(["ollama", "stop", name], check=True)
+        print(f"Stopped model: {name}")
+    except subprocess.CalledProcessError as e:
+        print(f"Error stopping model: {e}")

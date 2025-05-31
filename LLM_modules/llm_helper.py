@@ -20,3 +20,9 @@ def parse_response(module_name, content):
 
 def print_model_response(module_name, thoughts, response):
     return get_func(module_name, 'print_model_response')(thoughts, response)
+
+def start_model(module_name, name):
+    return get_func(module_name, 'start_model')(name)
+
+def stop_model(module_name, name):
+    return get_func(module_name, 'stop_model')(name)

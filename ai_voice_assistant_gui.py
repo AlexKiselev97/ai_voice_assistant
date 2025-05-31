@@ -49,6 +49,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.stop_event = threading.Event()
 
+        self.llm_provider = 'ollama_llm'
         self.lang = 'en'
         self.keyword = 'hello'
         self.assistant_loaded = False
@@ -79,7 +80,7 @@ class MainWindow(QMainWindow):
         model_layout = QHBoxLayout()
         model_label = QLabel("LLM model:")
         self.model_combo = QComboBox()
-        self.model_combo.addItems(llm_helper.get_model_list('ollama_llm'))
+        self.model_combo.addItems(llm_helper.get_model_list(self.llm_provider))
         self.selected_model = self.model_combo.currentText()
         self.model_combo.currentTextChanged.connect(self.on_model_change)
         model_layout.addWidget(model_label)
@@ -186,29 +187,10 @@ class MainWindow(QMainWindow):
         self.set_status_text(f"Model {self.selected_model} loaded!")
 
     def start_model(self, name):
-        try:
-            result = subprocess.run(
-                ["ollama", "run", name],
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            print("Ollama is running")
-            return True
-            
-        except subprocess.CalledProcessError as e:
-            print(f"Error executing command: {e.stderr}")
-            return False
-        except FileNotFoundError:
-            print("Error: Ollama is not installed or not in PATH")
-            return False
+        llm_helper.start_model(self.llm_provider, name)
     
     def stop_model(self, name):
-        try:
-            subprocess.run(["ollama", "stop", name], check=True)
-            print(f"Stopped model: {name}")
-        except subprocess.CalledProcessError as e:
-            print(f"Error stopping model: {e}")
+        llm_helper.stop_model(self.llm_provider, name)
 
     @pyqtSlot(str)
     def on_language_change(self, text):
@@ -285,9 +267,9 @@ class MainWindow(QMainWindow):
                 command = asr_helper.capture_command(self.current_asr, asr_engine, lambda: self.stop_event.is_set())
                 if not self.stop_event.is_set() and command:
                     self.set_status_text("Thinking...")
-                    response = llm_helper.get_response('ollama_llm', command, self.selected_model, self.lang)
-                    thoughts, response = llm_helper.parse_response('ollama_llm', response.message.content)
-                    llm_helper.print_model_response('ollama_llm', thoughts, response)
+                    response = llm_helper.get_response(self.llm_provider, command, self.selected_model, self.lang)
+                    thoughts, response = llm_helper.parse_response(self.llm_provider, response.message.content)
+                    llm_helper.print_model_response(self.llm_provider, thoughts, response)
                     if self.stop_event.is_set():
                         break
                     self.set_status_text("Responding...")
